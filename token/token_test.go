@@ -259,7 +259,7 @@ func TestTokenizer(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result := Tokenizer(tc.input)
+			result := Tokenizer([]byte(tc.input))
 			if !reflect.DeepEqual(result, tc.expected) {
 				t.Errorf("Test %s failed. Expected %#v\n, got %#v'\n", tc.name, tc.expected, result)
 			}

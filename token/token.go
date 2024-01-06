@@ -1,6 +1,7 @@
 package token
 
 import (
+	"bytes"
 	"fmt"
 	"unicode"
 )
@@ -63,7 +64,7 @@ type Token struct {
 // Tokenizer It is a simple state machine iterating over the input and categorizing characters into tokens.
 // Example Input: `{"name": "John"}`
 // Example Output: [{Type: LeftBrace, Val: "{"}, {Type: String, Val: "name"}, ...]
-func Tokenizer(input string) []Token {
+func Tokenizer(input []byte) []Token {
 	current := 0
 	var tokens []Token
 	stack := NewStack()
@@ -132,7 +133,7 @@ func Tokenizer(input string) []Token {
 			// check quote is closed
 			if current < len(input) {
 				value := input[start:current]
-				tokens = append(tokens, Token{Type: String, Val: value})
+				tokens = append(tokens, Token{Type: String, Val: string(value)})
 			} else {
 				tokens = append(tokens, Token{Type: ILLEGAL, Val: "Unclosed string literal"})
 				return tokens
@@ -153,13 +154,13 @@ func Tokenizer(input string) []Token {
 				} else {
 					prevTokenType = Number
 					value := input[start:current]
-					tokens = append(tokens, Token{Type: Number, Val: value})
+					tokens = append(tokens, Token{Type: Number, Val: string(value)})
 				}
 				continue
 			} else if char == 't' || char == 'f' {
 				if isBoolean(input, current) {
 					var length int
-					if input[current:current+4] == "true" {
+					if bytes.Equal(input[current:current+4], []byte("true")) {
 						length = 4
 					} else {
 						length = 5
@@ -167,7 +168,7 @@ func Tokenizer(input string) []Token {
 
 					prevTokenType = Boolean
 					value := input[current : current+length] // true or false
-					tokens = append(tokens, Token{Type: Boolean, Val: value})
+					tokens = append(tokens, Token{Type: Boolean, Val: string(value)})
 
 					current += length
 					continue
@@ -178,10 +179,10 @@ func Tokenizer(input string) []Token {
 				}
 			} else if char == 'n' {
 				if isNull(input, current) {
-					if input[current:current+4] == "null" {
+					if bytes.Equal(input[current:current+4], []byte("null")) {
 						value := input[current : current+4] // null
 
-						tokens = append(tokens, Token{Type: Null, Val: value})
+						tokens = append(tokens, Token{Type: Null, Val: string(value)})
 						current += 4
 						prevTokenType = Null
 						continue
@@ -220,13 +221,13 @@ func isDigit(c byte) bool {
 
 // isBoolean checks if a substring represents a boolean value ('true' or 'false').
 // Example: For input "true", it returns true.
-func isBoolean(input string, index int) bool {
-	trueLiteral := "true"
-	falseLiteral := "false"
+func isBoolean(input []byte, index int) bool {
+	trueLiteral := []byte("true")
+	falseLiteral := []byte("false")
 
 	if len(input)-index >= len(trueLiteral) {
 
-		if input[index:index+len(trueLiteral)] != trueLiteral {
+		if !bytes.Equal(input[index:index+len(trueLiteral)], trueLiteral) {
 			return false
 		}
 
@@ -238,7 +239,7 @@ func isBoolean(input string, index int) bool {
 
 	if len(input)-index >= len(falseLiteral) {
 
-		if input[index:index+len(falseLiteral)] != falseLiteral {
+		if !bytes.Equal(input[index:index+len(falseLiteral)], falseLiteral) {
 			return false
 		}
 
@@ -252,11 +253,11 @@ func isBoolean(input string, index int) bool {
 }
 
 // isNull checks if a substring represents a null value ('null').
-func isNull(input string, index int) bool {
-	nullLiteral := "null"
+func isNull(input []byte, index int) bool {
+	nullLiteral := []byte("null")
 	if len(input)-index >= len(nullLiteral) {
 
-		if input[index:index+len(nullLiteral)] != nullLiteral {
+		if !bytes.Equal(input[index:index+len(nullLiteral)], nullLiteral) {
 			return false
 		}
 
@@ -270,7 +271,7 @@ func isNull(input string, index int) bool {
 }
 
 // determineTokenType returns the type of token based on the input character
-func determineTokenType(char byte, input string, currentIndex int) Type {
+func determineTokenType(char byte, input []byte, currentIndex int) Type {
 	switch char {
 	case '{':
 		return LeftBrace
